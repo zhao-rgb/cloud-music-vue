@@ -8,6 +8,9 @@
         <mu-form-item label="密码" prop="password" :rules="passwordRules">
           <mu-text-field type="password" v-model="validateForm.password" prop="password"></mu-text-field>
         </mu-form-item>
+        <mu-auto-complete label="提示输入内容" v-model="verifyCode"></mu-auto-complete>
+        <mu-button color="info" @click="getVerify()" v-if="vailiable">获取验证码</mu-button>
+        <img ref="image" alt="" v-if="!vailiable" @click="getVerify()" />
         <mu-form-item prop="isAgree" :rules="argeeRules">
           <mu-checkbox label="同意用户协议" v-model="validateForm.isAgree"></mu-checkbox>
         </mu-form-item>
@@ -43,6 +46,8 @@ export default {
         password: '',
         isAgree: false
       },
+      verifyCode: '',
+      vailiable: true,
       menuList: [],
       openSimple: false
     }
@@ -51,22 +56,60 @@ export default {
   created() {},
   mounted() {},
   methods: {
-    openSimpleDialog() {
-      this.openSimple = true
+    //获取验证码
+    getVerify() {
+      this.vailiable = false
+      this.axios({
+        method: 'get',
+        url: 'http://localhost:8080/captcha',
+        // 2、将请求数据转换为form-data格式
+        params: {
+          name: this.validateForm.username
+        },
+        // 3、设置请求头Content-Type
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        responseType: 'blob'
+      }).then((res) => {
+        let img = this.$refs.image
+        let url = window.URL.createObjectURL(res.data)
+        img.src = url
+      })
     },
-    closeSimpleDialog() {
-      this.openSimple = false
-    },
+    //登录
     submit() {
       this.$refs.form.validate().then((result) => {
         console.log('form valid: ', result)
+        this.axios({
+          method: 'post',
+          url: 'http://localhost:8080/sysAdmin/login',
+          data: {
+            name: this.validateForm.username,
+            password: this.validateForm.password,
+            verifyCode: this.verifyCode
+          }
+        }).then((res) => {
+          if (res.data.msg === '成功') {
+            alert('登录成功')
+            localStorage.setItem('user', JSON.stringify(res.data.data))
+            localStorage.setItem('token', 'EcIHTAWoGrmMVvTu2LPvuL-siq6hAfieVeehl-HTe_M')
+            localStorage.setItem('menuList', JSON.stringify(this.menuList))
+            this.$store.commit('setToken', 'EcIHTAWoGrmMVvTu2LPvuL-siq6hAfieVeehl-HTe_M')
+            this.$store.commit('setUser', res.data.data)
+            this.$store.commit('setMenuList', this.menuList)
+            this.$router.push('/')
+            this.openSimpleDialog()
+          } else {
+            alert(res.data.msg)
+            this.validateForm.code = ''
+          }
+        })
         //模拟后端接口数据
-        let user = {
-          userId: '2000100193',
-          username: 'taoranran',
-          userRole: 'admin',
-          avatar: 'https://avatars1.githubusercontent.com/u/42235689?s=60&u=b25100f60b66465b78fe97e36b2788715c216a6d&v=4'
-        }
+        // let user = {
+        //   userId: '2000100193',
+        //   username: 'taoranran',
+        //   userRole: 'admin',
+        //   avatar: 'https://avatars1.githubusercontent.com/u/42235689?s=60&u=b25100f60b66465b78fe97e36b2788715c216a6d&v=4'
+        // }
         this.menuList = [
           { title: 'Dashboard', icon: 'mdi-view-dashboard', url: '/dashboard', subMenus: [] },
           {
@@ -90,15 +133,14 @@ export default {
           },
           { title: 'About', icon: 'mdi-help-box', url: '/about', subMenus: [] }
         ]
-        localStorage.setItem('token', 'EcIHTAWoGrmMVvTu2LPvuL-siq6hAfieVeehl-HTe_M')
-        localStorage.setItem('user', JSON.stringify(user))
-        localStorage.setItem('menuList', JSON.stringify(this.menuList))
-        this.$store.commit('setToken', 'EcIHTAWoGrmMVvTu2LPvuL-siq6hAfieVeehl-HTe_M')
-        this.$store.commit('setUser', user)
-        this.$store.commit('setMenuList', this.menuList)
-        this.$router.push('/')
-        this.openSimpleDialog()
       })
+    },
+
+    openSimpleDialog() {
+      this.openSimple = true
+    },
+    closeSimpleDialog() {
+      this.openSimple = false
     },
     clear() {
       this.$refs.form.clear()
@@ -115,7 +157,7 @@ export default {
 
 <style scoped lang="scss">
 .bg {
-  background-image: url('../assets/images/login-bg.jpg');
+  background-image: url('http://attachments.gfan.com/forum/attachments2/day_110619/1106190158ebe07267f75886d4.jpg');
   opacity: 0.8;
   height: 100vh;
   display: flex;

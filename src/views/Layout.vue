@@ -31,7 +31,7 @@
         </v-btn>
 
         <v-btn icon>
-          <v-icon>mdi-dots-vertical</v-icon>
+          <v-icon @click="logout()">mdi-dots-vertical</v-icon>
         </v-btn>
       </v-app-bar>
       <v-sheet id="scrolling-techniques-5" class="overflow-y-auto" max-height="600">
