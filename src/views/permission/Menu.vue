@@ -1,12 +1,16 @@
 <template>
-  <div></div>
+  <v-container>
+    <h3>菜单管理</h3>
+  </v-container>
 </template>
 
 <script>
 export default {
-  name: 'Profile',
+  name: 'Menu',
   data() {
-    return {}
+    return {
+      menus: this.$store.state.menuList[1].subMenus[1].subMenus
+    }
   },
   components: {},
   created() {},

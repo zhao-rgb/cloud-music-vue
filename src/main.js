@@ -13,6 +13,9 @@ Vue.use(VueAxios, axios)
 Vue.use(MuseUI)
 Vue.config.productionTip = false
 
+import global_ from '@/utils/Global'
+Vue.prototype.GLOBAL = global_
+
 // 导航钩子，全局钩子
 router.beforeEach((to, from, next) => {
   let token = localStorage.getItem('token')
@@ -34,6 +37,18 @@ router.beforeEach((to, from, next) => {
     }
     next()
   }
+})
+
+//全局请求拦截
+axios.interceptors.request.use((config) => {
+  //请求的接口不是登录和验证码接口
+  if (['/sysAdmin/login', '/captcha'].indexOf(config.url) === -1) {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = token
+    }
+  }
+  return config
 })
 
 new Vue({

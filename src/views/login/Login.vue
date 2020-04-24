@@ -10,7 +10,7 @@
         </mu-form-item>
         <mu-auto-complete label="提示输入内容" v-model="verifyCode"></mu-auto-complete>
         <mu-button color="info" @click="getVerify()" v-if="vailiable">获取验证码</mu-button>
-        <img ref="image" alt="" v-if="!vailiable" @click="getVerify()" />
+        <img ref="image" alt v-if="!vailiable" @click="getVerify()" />
         <mu-form-item prop="isAgree" :rules="argeeRules">
           <mu-checkbox label="同意用户协议" v-model="validateForm.isAgree"></mu-checkbox>
         </mu-form-item>
@@ -19,11 +19,19 @@
           <mu-button @click="clear">重置</mu-button>
         </mu-form-item>
       </mu-form>
-      <mu-dialog title="Dialog" width="360" :open.sync="openSimple">
-        登录成功
-        <mu-button slot="actions" flat color="primary" @click="closeSimpleDialog">Close</mu-button>
-      </mu-dialog>
     </mu-container>
+    <!--遮罩-->
+    <div class="mask" v-if="show">
+      <div class="dialog">
+        <h3>请选择要进入系统的角色</h3>
+        <div class="btn-wrapper">
+          <mu-button v-for="(role, index) in roles" :key="index" color="primary" class="btn" @click="gotoIndex(role.roleId)">{{
+            role.roleName
+          }}</mu-button>
+        </div>
+        <mu-button color="blue" class="cancel" @click="show = !show">Cancel</mu-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -49,7 +57,8 @@ export default {
       verifyCode: '',
       vailiable: true,
       menuList: [],
-      openSimple: false
+      show: false,
+      roles: []
     }
   },
   components: {},
@@ -81,66 +90,52 @@ export default {
         console.log('form valid: ', result)
         this.axios({
           method: 'post',
-          url: 'http://localhost:8080/sysAdmin/login',
+          url: this.GLOBAL.baseUrl + '/sysAdmin/login',
           data: {
             name: this.validateForm.username,
             password: this.validateForm.password,
             verifyCode: this.verifyCode
           }
         }).then((res) => {
-          if (res.data.msg === '成功') {
-            alert('登录成功')
-            localStorage.setItem('user', JSON.stringify(res.data.data))
-            localStorage.setItem('token', 'EcIHTAWoGrmMVvTu2LPvuL-siq6hAfieVeehl-HTe_M')
-            localStorage.setItem('menuList', JSON.stringify(this.menuList))
-            this.$store.commit('setToken', 'EcIHTAWoGrmMVvTu2LPvuL-siq6hAfieVeehl-HTe_M')
-            this.$store.commit('setUser', res.data.data)
-            this.$store.commit('setMenuList', this.menuList)
-            this.$router.push('/')
-            this.openSimpleDialog()
+          if (res.data.code === 1) {
+            //存token
+            localStorage.setItem('token', res.data.data.token)
+            this.$store.commit('setToken', res.data.data.token)
+            let admin = {
+              id: res.data.data.admin.id,
+              name: res.data.data.admin.name,
+              role: res.data.data.admin.roles,
+              avatar: res.data.data.admin.avatar
+            }
+            //存admin信息
+            localStorage.setItem('admin', JSON.stringify(admin))
+            this.$store.commit('setAdmin', JSON.stringify(admin))
+            this.roles = res.data.data.admin.roles
+            //角色数量超过1个
+            if (this.roles.length > 1) {
+              //弹出遮罩层选择
+              // alert('登录成功，你的角色不只一个，请选择')
+              //显示遮罩层，遮罩层按钮具体点击事件 gotoDashboard(roleId)
+              this.show = true
+            } else {
+              //只有一个角色
+              const roleId = res.data.data.admin.roles[0].roleId
+              // alert(roleId)
+              this.$router.push({
+                path: '/',
+                query: {
+                  roleId: roleId
+                }
+              })
+            }
           } else {
+            //登录失败
             alert(res.data.msg)
-            this.validateForm.code = ''
+            //清空验证码文本框
+            this.verifyCode = ''
           }
         })
-        //模拟后端接口数据
-        // let user = {
-        //   userId: '2000100193',
-        //   username: 'taoranran',
-        //   userRole: 'admin',
-        //   avatar: 'https://avatars1.githubusercontent.com/u/42235689?s=60&u=b25100f60b66465b78fe97e36b2788715c216a6d&v=4'
-        // }
-        this.menuList = [
-          { title: 'Dashboard', icon: 'mdi-view-dashboard', url: '/dashboard', subMenus: [] },
-          {
-            title: '音乐管理',
-            icon: 'mdi-music',
-            url: '',
-            subMenus: [
-              {
-                title: '歌单管理',
-                icon: 'mdi-domain',
-                url: '/music-list',
-                permissions: []
-              },
-              {
-                title: '歌曲管理',
-                icon: 'mdi-text',
-                url: '/music',
-                permissions: ['music:add', 'music:edit', 'music:delete']
-              }
-            ]
-          },
-          { title: 'About', icon: 'mdi-help-box', url: '/about', subMenus: [] }
-        ]
       })
-    },
-
-    openSimpleDialog() {
-      this.openSimple = true
-    },
-    closeSimpleDialog() {
-      this.openSimple = false
     },
     clear() {
       this.$refs.form.clear()
@@ -149,6 +144,16 @@ export default {
         password: '',
         isAgree: false
       }
+    },
+    gotoIndex(roleId) {
+      //带着用户选择的roleId跳到首页
+      alert(roleId)
+      this.$router.push({
+        path: '/',
+        query: {
+          roleId: roleId
+        }
+      })
     }
   },
   computed: {}
@@ -170,5 +175,39 @@ export default {
   background-color: #fff;
   border-radius: 10px;
   padding: 10px;
+}
+.mask {
+  z-index: 900;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .dialog {
+    z-index: 1000;
+    width: 400px;
+    height: 300px;
+    line-height: 100px;
+    background-color: #fff;
+    border-radius: 10px;
+    text-align: center;
+    padding-top: 50px;
+    .btn-wrapper {
+      margin-left: 60px;
+      display: flex;
+      .btn {
+        margin: 20px;
+      }
+    }
+    .cancel {
+      position: absolute;
+      margin-bottom: 30px;
+      left: 700px;
+    }
+  }
 }
 </style>
