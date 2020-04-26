@@ -147,7 +147,7 @@ export default {
     },
     gotoIndex(roleId) {
       //带着用户选择的roleId跳到首页
-      alert(roleId)
+      // alert(roleId)
       this.$router.push({
         path: '/',
         query: {

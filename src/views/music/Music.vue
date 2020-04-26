@@ -11,6 +11,7 @@
           v-model="search"
           append-icon="mdi-magnify"
           label="Search"
+          @keyup.enter="cha()"
           single-line
           hide-details
         ></v-text-field>
@@ -29,67 +30,18 @@ export default {
       search: '',
       headers: [
         {
-          text: 'Dessert (100g serving)',
+          text: '歌曲',
           align: 'start',
           sortable: false,
-          value: 'name'
+          value: 'song_name'
         },
-        { text: 'Calories', value: 'calories' },
-        { text: 'Fat (g)', value: 'fat' },
-        { text: 'Carbs (g)', value: 'carbs' },
-        { text: 'Protein (g)', value: 'protein' },
-        { text: 'Iron (%)', value: 'iron' }
+        { text: '歌手', value: 'singer' },
+        { text: '喜欢数(w)', value: 'like_count' },
+        { text: '评论数(w)', value: 'comment_count' },
+        { text: '创建时间', value: 'create_time' },
+        { text: '时长', value: 'duration' }
       ],
-      desserts: [
-        {
-          name: '新世界',
-          calories: 159,
-          fat: 6.0,
-          carbs: 24,
-          protein: 4.0,
-          iron: '1%'
-        },
-        {
-          name: '瞬息',
-          calories: 237,
-          fat: 9.0,
-          carbs: 37,
-          protein: 4.3,
-          iron: '1%'
-        },
-        {
-          name: '星空下拥抱你',
-          calories: 262,
-          fat: 16.0,
-          carbs: 23,
-          protein: 6.0,
-          iron: '7%'
-        },
-        {
-          name: '不说',
-          calories: 305,
-          fat: 3.7,
-          carbs: 67,
-          protein: 4.3,
-          iron: '8%'
-        },
-        {
-          name: '蓝色旅人',
-          calories: 356,
-          fat: 16.0,
-          carbs: 49,
-          protein: 3.9,
-          iron: '16%'
-        },
-        {
-          name: '蜻蜓',
-          calories: 375,
-          fat: 0.0,
-          carbs: 94,
-          protein: 0.0,
-          iron: '0%'
-        }
-      ]
+      desserts: []
     }
   },
   created() {
@@ -98,6 +50,25 @@ export default {
     console.log(index, index1)
     this.menus = JSON.parse(localStorage.getItem('menuList'))[index].subMenus[index1].subMenus
     console.log(this.menus)
+    this.axios.get(this.GLOBAL.baseUrl + '/song/list').then((res) => {
+      this.desserts = res.data.data
+      console.log(this.desserts)
+    })
+  },
+  methods: {
+    //模糊查询歌曲
+    cha() {
+      this.axios({
+        method: 'get',
+        url: this.GLOBAL.baseUrl + '/songList/select',
+        // 问号带参，表单提交
+        params: {
+          field: this.search
+        }
+      }).then((res) => {
+        this.desserts = res.data.data
+      })
+    }
   }
 }
 </script>
