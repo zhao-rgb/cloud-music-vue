@@ -5,8 +5,8 @@
     </span>-->
     <span>
       <mu-button color="success" class="gutter">查询</mu-button>
-      <mu-button color="warning" class="gutter" @click="operation()">导出</mu-button>
-      <mu-button color="error" class="gutter">删除</mu-button>
+      <mu-button color="warning" class="gutter" @click="expor()">导出</mu-button>
+      <mu-button tton color="error" class="gutter">删除</mu-button>
     </span>
     <span>
       <mu-text-field v-model="keywords" placeholder="输入关键词搜索"></mu-text-field>
@@ -81,6 +81,7 @@ export default {
   data() {
     return {
       selected: [],
+      menuList: this.$store.state.menuList,
       menus: [],
       types: [],
       typeId: 0,
@@ -90,9 +91,15 @@ export default {
     }
   },
   created() {
-    let index = this.$route.query.index
-    let index1 = this.$route.query.index1
-    this.menus = JSON.parse(localStorage.getItem('menuList'))[index].subMenus[index1].subMenus
+    for (let i = 0; i < this.menuList.length; i++) {
+      let parent = this.menuList[i]
+      for (let j = 0; j < parent.subMenus.length; j++) {
+        let child = this.menuList[i]
+        if (child.subMenus[j].path === this.$options.name) {
+          this.menus = child.subMenus[j].subMenus
+        }
+      }
+    }
     //获取所有歌曲
     this.axios.get(this.GLOBAL.baseUrl + '/songList/type').then((res) => {
       this.types = res.data.data
@@ -104,7 +111,7 @@ export default {
       this.show = !this.show
       this.typeId = Id
     },
-    //模糊查询歌单
+    // 模糊查询歌单
     search() {
       this.axios({
         method: 'get',
@@ -118,34 +125,6 @@ export default {
       })
       this.show = !this.show
     }
-    // operation() {
-    //   alert(1)
-    //   this.axios({
-    //     method: 'get',
-    //     url: this.GLOBAL.baseUrl + '/resources/songList',
-    //     responseType: 'blob'
-    //   }).then((res) => {
-    //     //指定类型位excel表类型
-    //     const blob = new Blob([res.data], { type: 'application/vnd.ms-excel' })
-    //     //创建a标签节点
-    //     const download = document.createElement('a')
-    //     //与获取验证码url方法一样
-    //     const href = window.URL.createObjectURL(blob)
-    //     //给超链接的href属性赋url值
-    //     download.href = href
-    //     //设置下载的文件名
-    //     download.download = '歌单数据表.xls'
-    //     //将a标签放在body中
-    //     document.body.appendChild(download)
-    //     //给a标签生成一个点击事件
-    //     download.click()
-    //     //移除a标签，为了下次点击时创建
-    //     document.body.removeChild(download)
-    //     //移除url
-    //     window.URL.revokeObjectURL(href)
-    //     alert(2)
-    //   })
-    // }
   }
 }
 </script>

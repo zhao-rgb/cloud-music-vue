@@ -1,7 +1,12 @@
 <template>
   <div style="padding-top:10px;">
-    <span v-for="(item, index) in menus" :key="index" class="gutter">
+    <!-- <span v-for="(item, index) in menus" :key="index" class="gutter">
       <mu-button :color="item.icon">{{ item.title }}</mu-button>
+    </span> -->
+    <span>
+      <mu-button color="success" class="gutter">查询</mu-button>
+      <mu-button color="warning" class="gutter" @click="expor()">导出</mu-button>
+      <mu-button tton color="error" class="gutter">删除</mu-button>
     </span>
     <v-card>
       <v-card-title>
@@ -26,7 +31,7 @@ export default {
   name: 'Music',
   data() {
     return {
-      menus: [],
+      menuList: this.$store.state.menuList,
       search: '',
       headers: [
         {
@@ -45,11 +50,17 @@ export default {
     }
   },
   created() {
-    let index = this.$route.query.index
-    let index1 = this.$route.query.index1
-    console.log(index, index1)
-    this.menus = JSON.parse(localStorage.getItem('menuList'))[index].subMenus[index1].subMenus
-    console.log(this.menus)
+    console.log(this.$options.name)
+    for (let i = 0; i < this.menuList.length; i++) {
+      let parent = this.menuList[i]
+      for (let j = 0; j < parent.subMenus.length; j++) {
+        let child = this.menuList[i]
+        if (child.subMenus[j].path === this.$options.name) {
+          this.menus = child.subMenus[j].subMenus
+          console.log(JSON.stringify(this.menus))
+        }
+      }
+    }
     this.axios.get(this.GLOBAL.baseUrl + '/song/list').then((res) => {
       this.desserts = res.data.data
       console.log(this.desserts)
@@ -67,6 +78,16 @@ export default {
         }
       }).then((res) => {
         this.desserts = res.data.data
+      })
+    },
+    expor() {
+      this.axios({
+        method: 'get',
+        url: this.GLOBAL.baseUrl + '/song/export'
+      }).then((res) => {
+        if (res.data.code === 1) {
+          alert('导出成功')
+        }
       })
     }
   }
